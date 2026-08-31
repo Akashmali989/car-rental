@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import {db} from './src/config/db.js';
 import router from './src/routes/authRoutes.js';
 import carRouter from './src/routes/carRoutes.js';
+import { bookingRoute } from './src/routes/bookingRoute.js';
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/auth', router);
 app.use('/api/cars', carRouter);
+app.use('/api/bookings', bookingRoute);
 
 app.get('/', (req, res) => {
     res.json({
