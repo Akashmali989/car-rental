@@ -22,8 +22,22 @@ const getUserById = async (id) =>{
     return rows[0];
 }
 
+const updateUserProfile = async (userId, full_name, phone) => {
+    const [result] = await db.query(
+        `
+        UPDATE users
+        SET full_name = ?, phone = ?
+        WHERE id = ?
+        `,
+        [full_name, phone, userId]
+    );
+
+    return result;
+};
+
 export default {
     createUser,
     getUserByEmail,
-    getUserById
+    getUserById,
+    updateUserProfile
 };

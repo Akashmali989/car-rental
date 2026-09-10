@@ -146,4 +146,45 @@ const getMe = async (req, res) => {
     }
 };
 
-export { register, login, getMe };
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const { full_name, phone } = req.body;
+
+        if (!full_name || !phone) {
+            return res.status(400).json({
+                success: false,
+                message: "Full name and phone number are required"
+            });
+        }
+
+        const result = await userModel.updateUserProfile(
+            userId,
+            full_name,
+            phone
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully"
+        });
+
+    } catch (error) {
+        console.error("Update Profile Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update profile"
+        });
+    }
+};
+
+export { register, login, getMe, updateProfile };

@@ -77,7 +77,57 @@ const createNewBooking = async (
     return result;
 };
 
-const getAllMyBookings = async (userId) => {
+const getAllMyBookings = async (userId, status = null) => {
+    let query = `
+        SELECT
+            bookings.id,
+            bookings.pickup_date,
+            bookings.return_date,
+            bookings.total_days,
+            bookings.price_per_day,
+            bookings.total_amount,
+            bookings.status,
+            bookings.payment_status,
+            bookings.created_at,
+
+            cars.id AS car_id,
+            cars.model,
+            cars.registration_number,
+            cars.year,
+            cars.color,
+            cars.fuel_type,
+            cars.transmission,
+            cars.seating_capacity,
+            cars.location,
+
+            car_brands.name AS brand_name
+
+        FROM bookings
+
+        INNER JOIN cars
+            ON bookings.car_id = cars.id
+
+        INNER JOIN car_brands
+            ON cars.brand_id = car_brands.id
+
+        WHERE bookings.user_id = ?
+    `;
+
+    const params = [userId];
+
+    if (status) {
+        query += ` AND bookings.status = ?`;
+        params.push(status);
+    }
+
+    query += ` ORDER BY bookings.created_at DESC`;
+
+    const [rows] = await db.query(query, params);
+
+    return rows;
+};
+
+const getBookingById = async (bookingId, userId) => {
     const [rows] = await db.query(
         `
         SELECT
@@ -93,10 +143,13 @@ const getAllMyBookings = async (userId) => {
 
             cars.id AS car_id,
             cars.model,
+            cars.registration_number,
             cars.year,
             cars.color,
             cars.fuel_type,
             cars.transmission,
+            cars.seating_capacity,
+            cars.location,
 
             car_brands.name AS brand_name
 
@@ -108,14 +161,28 @@ const getAllMyBookings = async (userId) => {
         INNER JOIN car_brands
             ON cars.brand_id = car_brands.id
 
-        WHERE bookings.user_id = ?
-
-        ORDER BY bookings.created_at DESC
+        WHERE bookings.id = ?
+        AND bookings.user_id = ?
         `,
-        [userId]
+        [bookingId, userId]
     );
 
-    return rows;
+    return rows[0];
 };
 
-export { getCarForBooking, checkCarAvailability, createNewBooking, getAllMyBookings };
+const cancelBooking = async (bookingId, userId) => {
+    const [result] = await db.query(
+        `
+        UPDATE bookings
+        SET status = 'CANCELLED'
+        WHERE id = ?
+        AND user_id = ?
+        AND status IN ('PENDING', 'CONFIRMED')
+        `,
+        [bookingId, userId]
+    );
+
+    return result;
+};
+
+export { getCarForBooking, checkCarAvailability, createNewBooking, getAllMyBookings, getBookingById, cancelBooking };

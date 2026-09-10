@@ -1,4 +1,4 @@
-import {checkCarAvailability, getCarForBooking, createNewBooking, getAllMyBookings} from '../models/bookingModel.js'
+import {checkCarAvailability, getCarForBooking, createNewBooking, getAllMyBookings, getBookingById, cancelBooking} from '../models/bookingModel.js'
 
 const createBooking = async (req, res) => {
     try {
@@ -22,6 +22,22 @@ const createBooking = async (req, res) => {
         // Convert dates
         const pickup = new Date(pickupDate);
         const returnTime = new Date(returnDate);
+
+        const now = new Date();
+
+        if (pickup < now) {
+            return res.status(400).json({
+                success: false,
+                message: "Pickup date cannot be in the past"
+            });
+        }
+
+        if (returnTime <= pickup) {
+            return res.status(400).json({
+                success: false,
+                message: "Return date must be after pickup date"
+            });
+        }
 
         // Validate date format
         if (
@@ -130,8 +146,26 @@ const createBooking = async (req, res) => {
 const getMyBookings = async (req, res) => {
     try {
         const userId = req.user.id;
+        const { status } = req.query;
 
-        const bookings = await getAllMyBookings(userId);
+        const allowedStatuses = [
+            "PENDING",
+            "CONFIRMED",
+            "CANCELLED",
+            "COMPLETED"
+        ];
+
+        if (status && !allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid booking status"
+            });
+        }
+
+        const bookings = await getAllMyBookings(
+            userId,
+            status || null
+        );
 
         return res.status(200).json({
             success: true,
@@ -149,7 +183,73 @@ const getMyBookings = async (req, res) => {
     }
 };
 
+const getBookingUsingId = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const booking = await getBookingById(
+            id,
+            userId
+        );
+
+        if (!booking) {
+            return res.status(404).json({
+                success: false,
+                message: "Booking not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            booking
+        });
+
+    } catch (error) {
+        console.error("Get Booking Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch booking"
+        });
+    }
+};
+
+const canceledBooking = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const result = await cancelBooking(
+            id,
+            userId
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Booking not found or cannot be cancelled"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Booking cancelled successfully"
+        });
+
+    } catch (error) {
+        console.error("Cancel Booking Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to cancel booking"
+        });
+    }
+};
+
 export {
     createBooking,
-    getMyBookings
+    getMyBookings,
+    getBookingUsingId,
+    canceledBooking
 };

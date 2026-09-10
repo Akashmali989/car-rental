@@ -139,13 +139,33 @@ const getCarById = async (id) => {
             car_brands.name AS brand_name,
             car_brands.logo AS brand_logo
 
+            COALESCE(AVG(reviews.rating), 0) AS average_rating,
+            COUNT(reviews.id) AS review_count
+
         FROM cars
 
         INNER JOIN car_brands
             ON cars.brand_id = car_brands.id
 
+        LEFT JOIN reviews
+        ON cars.id = reviews.car_id
+
         WHERE cars.id = ?
         AND cars.status != 'INACTIVE'
+
+        GROUP BY
+            cars.id,
+            cars.model,
+            cars.registration_number,
+            cars.year,
+            cars.color,
+            cars.fuel_type,
+            cars.transmission,
+            cars.seating_capacity,
+            cars.price_per_day,
+            cars.status,
+            cars.location,
+            car_brands.name;
     `, [id]);
 
     if (cars.length === 0) {

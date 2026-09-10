@@ -5,6 +5,8 @@ import {db} from './src/config/db.js';
 import router from './src/routes/authRoutes.js';
 import carRouter from './src/routes/carRoutes.js';
 import { bookingRoute } from './src/routes/bookingRoute.js';
+import favoriteRoutes from './src/routes/favoriteRoutes.js';
+import reviewRoutes from "./src/routes/reviewRoutes.js";
 
 dotenv.config();
 
@@ -15,6 +17,9 @@ app.use(express.json());
 app.use('/api/auth', router);
 app.use('/api/cars', carRouter);
 app.use('/api/bookings', bookingRoute);
+app.use('/api/favorites', favoriteRoutes);
+app.use("/api/reviews", reviewRoutes);
+
 
 app.get('/', (req, res) => {
     res.json({
